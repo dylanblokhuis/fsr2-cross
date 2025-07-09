@@ -19,8 +19,8 @@ fn main() {
     let info = std::process::Command::new("cmake")
         .arg("-DFFX_FSR2_API_DX12=OFF")
         .arg("-DFFX_FSR2_API_VK=ON")
-        .arg("-Bfsr2/src/ffx-fsr2-api/build")
-        .arg("-Sfsr2/src/ffx-fsr2-api")
+        .arg("-BFidelityFX-FSR2/src/ffx-fsr2-api/build")
+        .arg("-SFidelityFX-FSR2/src/ffx-fsr2-api")
         .stdout(std::process::Stdio::inherit())
         .stderr(std::process::Stdio::inherit())
         .status()
@@ -32,7 +32,7 @@ fn main() {
 
     // run make to build the project
     let info = std::process::Command::new("make")
-        .arg("-Cfsr2/src/ffx-fsr2-api/build")
+        .arg("-CFidelityFX-FSR2/src/ffx-fsr2-api/build")
         .arg("-j4") // Use 4 threads for building
         .stdout(std::process::Stdio::inherit())
         .stderr(std::process::Stdio::inherit())
@@ -43,11 +43,11 @@ fn main() {
         panic!("Make command failed with status: {}", info);
     }
 
-    println!("cargo:rerun-if-changed=fsr2/src/ffx-fsr2-api/ffx_fsr2.h");
-    println!("cargo:rerun-if-changed=fsr2/src/ffx-fsr2-api/vk/ffx_fsr2_vk.h");
+    println!("cargo:rerun-if-changed=FidelityFX-FSR2/src/ffx-fsr2-api/ffx_fsr2.h");
+    println!("cargo:rerun-if-changed=FidelityFX-FSR2/src/ffx-fsr2-api/vk/ffx_fsr2_vk.h");
 
-    println!("cargo:rustc-link-search=native=fsr2/src/ffx-fsr2-api/build");
-    println!("cargo:rustc-link-search=native=fsr2/src/ffx-fsr2-api/build/vk");
+    println!("cargo:rustc-link-search=native=FidelityFX-FSR2/src/ffx-fsr2-api/build");
+    println!("cargo:rustc-link-search=native=FidelityFX-FSR2/src/ffx-fsr2-api/build/vk");
 
     // if arm then link to arm64
     if cfg!(target_arch = "arm") {
