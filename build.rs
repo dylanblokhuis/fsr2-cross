@@ -62,5 +62,7 @@ fn main() {
         }
     }
 
-    // println!("cargo:rustc-link-lib=stdc++");
+    if cfg!(target_os = "linux") {
+        println!("cargo:rustc-link-lib=stdc++");
+    }
 }
