@@ -1,4 +1,3 @@
 [submodule "FidelityFX-FSR2"]
 	path = FidelityFX-FSR2
 	url = https://github.com/dylanblokhuis/FidelityFX-FSR2
-	branch = main
