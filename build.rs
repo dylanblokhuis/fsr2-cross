@@ -1,70 +1,66 @@
-// extern crate bindgen;
+use std::env;
+use std::path::PathBuf;
+use std::process::{Command, Stdio};
 
 fn main() {
-    // let bindings = bindgen::Builder::default()
-    //     .header("fsr2/src/ffx-fsr2-api/ffx_fsr2.h")
-    //     .header("fsr2/src/ffx-fsr2-api/vk/ffx_fsr2_vk.h")
-    //     // .allowlist_function("ffxFsr.*")
-    //     .allowlist_type("FfxFsr2.*")
-    //     .allowlist_function("ffx.*")
-    //     .allowlist_item("FFX.*")
-    //     // .trust_clang_mangling(false)
-    //     // .layout_tests(false)
-    //     .generate()
-    //     .unwrap();
+    let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
+    let build_dir = out_dir.join("ffx-fsr2-build");
+    let source_dir = PathBuf::from("FidelityFX-FSR2/src/ffx-fsr2-api");
 
-    // bindings.write_to_file("src/ffx_fsr2.rs").unwrap();
-
-    // run the command "cmake -DFFX_FSR2_API_DX12=OFF -DFFX_FSR2_API_VK=ON .." in fsr2/src/ffx-fsr2-api
-    let info = std::process::Command::new("cmake")
+    // Run cmake to configure the project
+    let cmake_status = Command::new("cmake")
         .arg("-DFFX_FSR2_API_DX12=OFF")
         .arg("-DFFX_FSR2_API_VK=ON")
-        .arg("-BFidelityFX-FSR2/src/ffx-fsr2-api/build")
-        .arg("-SFidelityFX-FSR2/src/ffx-fsr2-api")
-        .stdout(std::process::Stdio::inherit())
-        .stderr(std::process::Stdio::inherit())
+        .arg(format!("-B{}", build_dir.display()))
+        .arg(format!("-S{}", source_dir.display()))
+        .stdout(Stdio::inherit())
+        .stderr(Stdio::inherit())
         .status()
         .expect("Failed to run cmake");
 
-    if !info.success() {
-        panic!("CMake command failed with status: {}", info);
+    if !cmake_status.success() {
+        panic!("CMake configuration failed with status: {}", cmake_status);
     }
 
-    // run make to build the project
-    let info = std::process::Command::new("make")
-        .arg("-CFidelityFX-FSR2/src/ffx-fsr2-api/build")
-        .arg("-j4") // Use 4 threads for building
-        .stdout(std::process::Stdio::inherit())
-        .stderr(std::process::Stdio::inherit())
+    // Run make to build the project
+    let make_status = Command::new("make")
+        .arg(format!("-C{}", build_dir.display()))
+        .arg("-j4")
+        .stdout(Stdio::inherit())
+        .stderr(Stdio::inherit())
         .status()
         .expect("Failed to run make");
 
-    if !info.success() {
-        panic!("Make command failed with status: {}", info);
+    if !make_status.success() {
+        panic!("Make command failed with status: {}", make_status);
     }
 
-    println!("cargo:rerun-if-changed=FidelityFX-FSR2/src/ffx-fsr2-api/ffx_fsr2.h");
-    println!("cargo:rerun-if-changed=FidelityFX-FSR2/src/ffx-fsr2-api/vk/ffx_fsr2_vk.h");
+    // Inform Cargo to re-run if headers change
+    println!("cargo:rerun-if-changed={}/ffx_fsr2.h", source_dir.display());
+    println!(
+        "cargo:rerun-if-changed={}/vk/ffx_fsr2_vk.h",
+        source_dir.display()
+    );
 
-    println!("cargo:rustc-link-search=native=FidelityFX-FSR2/src/ffx-fsr2-api/build");
-    println!("cargo:rustc-link-search=native=FidelityFX-FSR2/src/ffx-fsr2-api/build/vk");
+    // Link paths
+    println!("cargo:rustc-link-search=native={}", build_dir.display());
+    println!("cargo:rustc-link-search=native={}/vk", build_dir.display());
 
-    // if arm then link to arm64
-    if cfg!(target_arch = "arm") {
-        println!("cargo:rustc-link-lib=static=ffx_fsr2_api_arm64");
-        println!("cargo:rustc-link-lib=static=ffx_fsr2_api_vk_arm64");
-    } else if cfg!(target_arch = "aarch64") {
-        println!("cargo:rustc-link-lib=static=ffx_fsr2_api_arm64");
-        println!("cargo:rustc-link-lib=static=ffx_fsr2_api_vk_arm64");
-    } else if cfg!(target_arch = "x86_64") {
-        println!("cargo:rustc-link-lib=static=ffx_fsr2_api_x86_64");
-        println!("cargo:rustc-link-lib=static=ffx_fsr2_api_vk_x86_64");
-    } else {
-        panic!(
-            "Unsupported architecture: {}",
-            std::env::var("CARGO_CFG_TARGET_ARCH").unwrap()
-        );
+    // Determine which library to link based on target arch
+    let target_arch = env::var("CARGO_CFG_TARGET_ARCH").unwrap();
+    match target_arch.as_str() {
+        "arm" | "aarch64" => {
+            println!("cargo:rustc-link-lib=static=ffx_fsr2_api_arm64");
+            println!("cargo:rustc-link-lib=static=ffx_fsr2_api_vk_arm64");
+        }
+        "x86_64" => {
+            println!("cargo:rustc-link-lib=static=ffx_fsr2_api_x86_64");
+            println!("cargo:rustc-link-lib=static=ffx_fsr2_api_vk_x86_64");
+        }
+        _ => {
+            panic!("Unsupported architecture: {}", target_arch);
+        }
     }
 
-    println!("cargo:rustc-link-lib=stdc++");
+    // println!("cargo:rustc-link-lib=stdc++");
 }
