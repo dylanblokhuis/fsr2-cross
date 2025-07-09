@@ -15,8 +15,36 @@ fn main() {
 
     // bindings.write_to_file("src/ffx_fsr2.rs").unwrap();
 
-    println!("cargo:rerun-if-changed=fsr2/src/ffx-fsr2-api/ffx_fsr2.h");
-    println!("cargo:rerun-if-changed=fsr2/src/ffx-fsr2-api/vk/ffx_fsr2_vk.h");
+    // run the command "cmake -DFFX_FSR2_API_DX12=OFF -DFFX_FSR2_API_VK=ON .." in fsr2/src/ffx-fsr2-api
+    let info = std::process::Command::new("cmake")
+        .arg("-DFFX_FSR2_API_DX12=OFF")
+        .arg("-DFFX_FSR2_API_VK=ON")
+        .arg("-Bfsr2/src/ffx-fsr2-api/build")
+        .arg("-Sfsr2/src/ffx-fsr2-api")
+        .stdout(std::process::Stdio::inherit())
+        .stderr(std::process::Stdio::inherit())
+        .status()
+        .expect("Failed to run cmake");
+
+    if !info.success() {
+        panic!("CMake command failed with status: {}", info);
+    }
+
+    // run make to build the project
+    let info = std::process::Command::new("make")
+        .arg("-Cfsr2/src/ffx-fsr2-api/build")
+        .arg("-j4") // Use 4 threads for building
+        .stdout(std::process::Stdio::inherit())
+        .stderr(std::process::Stdio::inherit())
+        .status()
+        .expect("Failed to run make");
+
+    if !info.success() {
+        panic!("Make command failed with status: {}", info);
+    }
+
+    // println!("cargo:rerun-if-changed=fsr2/src/ffx-fsr2-api/ffx_fsr2.h");
+    // println!("cargo:rerun-if-changed=fsr2/src/ffx-fsr2-api/vk/ffx_fsr2_vk.h");
 
     println!("cargo:rustc-link-search=native=fsr2/src/ffx-fsr2-api/build");
     println!("cargo:rustc-link-search=native=fsr2/src/ffx-fsr2-api/build/vk");
