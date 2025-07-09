@@ -43,8 +43,8 @@ fn main() {
         panic!("Make command failed with status: {}", info);
     }
 
-    // println!("cargo:rerun-if-changed=fsr2/src/ffx-fsr2-api/ffx_fsr2.h");
-    // println!("cargo:rerun-if-changed=fsr2/src/ffx-fsr2-api/vk/ffx_fsr2_vk.h");
+    println!("cargo:rerun-if-changed=fsr2/src/ffx-fsr2-api/ffx_fsr2.h");
+    println!("cargo:rerun-if-changed=fsr2/src/ffx-fsr2-api/vk/ffx_fsr2_vk.h");
 
     println!("cargo:rustc-link-search=native=fsr2/src/ffx-fsr2-api/build");
     println!("cargo:rustc-link-search=native=fsr2/src/ffx-fsr2-api/build/vk");
